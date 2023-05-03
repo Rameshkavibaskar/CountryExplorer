@@ -32,13 +32,15 @@ import {
   removeFavorite,
   updateCacheToOriginalList,
   invokePullToRefresh,
+  setSearchCacheData,
 } from '../store/CountrySlice';
 import {SearchIcon, HeartIcon} from '../components/SvgIcons';
 import Container from '../components/Container';
 import {useTheme} from '../hooks/useTheme';
+import {isErrorWithMessage} from '../services/Api';
 
 const HomeScreen: FC = () => {
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState<string>('');
   const {theme, colors} = useTheme();
   const dispatch = useDispatch();
   const {allCountryList, favoriteList, isPullToRefreshLoading} = useSelector(
@@ -48,25 +50,42 @@ const HomeScreen: FC = () => {
     useLazyGetCountryQuery();
   const [
     searchCountry,
-    {error: searchCountryError, isFetching: isSearchCountryLoading},
+    {
+      error: searchCountryError,
+      isFetching: isSearchCountryLoading,
+      isSuccess,
+      isError,
+      data: searchCountryData,
+    },
   ] = useLazySearchCountryQuery();
 
   useEffect(() => {
     getAllCountry();
   }, []);
 
+  useEffect(() => {
+    if (isSuccess && searchCountryData) {
+      dispatch(setSearchCacheData(searchCountryData));
+    } else if (isError) {
+      dispatch(setSearchCacheData([]));
+    }
+  }, [isSuccess, isError, searchCountryData]);
+
   /**
    * @function onPressFavItem
    * @param {object, string} -country and name
    * add/remove favorite country in redux store
    */
-  const onPressFavItem = useCallback((country: Country, name: string) => {
-    if (favoriteList.some(favorite => favorite.name === country.name)) {
-      dispatch(removeFavorite({country, name}));
-    } else {
-      dispatch(addFavorite({country, name}));
-    }
-  }, []);
+  const onPressFavItem = useCallback(
+    (country: Country, name: string) => {
+      if (favoriteList.some(favorite => favorite.name === country.name)) {
+        dispatch(removeFavorite({country, name}));
+      } else {
+        dispatch(addFavorite({country, name}));
+      }
+    },
+    [allCountryList],
+  );
 
   /**
    * @function handleSearchTextChange
@@ -96,7 +115,7 @@ const HomeScreen: FC = () => {
   const invokeSearchCountry = () => {
     Keyboard.dismiss();
     if (searchValue !== '') {
-      searchCountry(searchValue);
+      searchCountry(searchValue, true);
     }
   };
 
@@ -106,14 +125,7 @@ const HomeScreen: FC = () => {
    * render Flat list item
    */
   const countryItem = (item: Country) => {
-    return (
-      <CountryItem
-        country={item}
-        onPressFavItem={(country: Country, name: string) => {
-          onPressFavItem(country, name);
-        }}
-      />
-    );
+    return <CountryItem country={item} onPressFavItem={onPressFavItem} />;
   };
 
   /**
@@ -135,11 +147,11 @@ const HomeScreen: FC = () => {
   const errorComponent = () => {
     return (
       <View style={styles.errorContainer}>
-        {countryError ? (
+        {isErrorWithMessage(countryError) ? (
           <Text style={[styles.errorText, {color: colors.text}]}>
             {countryError?.data?.message}
           </Text>
-        ) : searchCountryError ? (
+        ) : isErrorWithMessage(searchCountryError) ? (
           <Text style={[styles.errorText, {color: colors.text}]}>
             {searchCountryError?.data?.message}
           </Text>

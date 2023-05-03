@@ -5,7 +5,7 @@
  * Created by Ramesh on 25/04/2023
  *************************************************/
 
-import {createSlice} from '@reduxjs/toolkit';
+import {PayloadAction, createSlice} from '@reduxjs/toolkit';
 import {countryApi} from '../services/CountryServices';
 import {Country} from '../services/CountryModel';
 
@@ -20,6 +20,10 @@ const initialState: CountryState = {
   favoriteList: [],
   cacheCountryList: [],
   isPullToRefreshLoading: false,
+};
+type AddRemoveFavoritePayload = {
+  country: Country;
+  name: string;
 };
 
 /**
@@ -70,7 +74,7 @@ export const countrySlice = createSlice({
   name: 'country',
   initialState,
   reducers: {
-    addFavorite: (state, action) => {
+    addFavorite: (state, action: PayloadAction<AddRemoveFavoritePayload>) => {
       state.favoriteList.push({...action.payload.country, isFavorite: true});
 
       state.allCountryList = updateFavoriteItemCountryList(
@@ -84,7 +88,10 @@ export const countrySlice = createSlice({
         true,
       );
     },
-    removeFavorite: (state, action) => {
+    removeFavorite: (
+      state,
+      action: PayloadAction<AddRemoveFavoritePayload>,
+    ) => {
       let filterList = state.favoriteList.filter(
         favorite => favorite.name !== action.payload.name,
       );
@@ -106,6 +113,12 @@ export const countrySlice = createSlice({
     },
     invokePullToRefresh: state => {
       state.isPullToRefreshLoading = true;
+    },
+    setSearchCacheData: (state, action) => {
+      state.allCountryList = updateFavoriteListToCountryList(
+        action.payload,
+        state.favoriteList,
+      );
     },
   },
   extraReducers: builder => {
@@ -153,6 +166,7 @@ export const {
   removeFavorite,
   updateCacheToOriginalList,
   invokePullToRefresh,
+  setSearchCacheData,
 } = countrySlice.actions;
 
 export default countrySlice.reducer;

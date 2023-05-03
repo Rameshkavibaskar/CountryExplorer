@@ -13,6 +13,11 @@ import {
   FetchBaseQueryError,
 } from '@reduxjs/toolkit/query/react';
 
+type ApiError = {
+  data: {message: string; status: number};
+  status: number;
+};
+
 const baseQuery = fetchBaseQuery({
   baseUrl: 'https://restcountries.com/v3.1/',
 });
@@ -27,6 +32,17 @@ const baseQueryWithInterceptor: BaseQueryFn<
   }
   return result;
 };
+
+export function isErrorWithMessage(error: unknown): error is ApiError {
+  return (
+    typeof error === 'object' &&
+    error != null &&
+    'data' in error &&
+    typeof error.data === 'object' &&
+    error.data != null &&
+    'message' in error.data
+  );
+}
 
 export const api = createApi({
   baseQuery: baseQueryWithInterceptor,

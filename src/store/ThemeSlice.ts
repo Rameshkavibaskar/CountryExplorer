@@ -6,7 +6,7 @@
  * Created by Ramesh on 25/04/2023
  *************************************************/
 
-import {createSlice} from '@reduxjs/toolkit';
+import {PayloadAction, createSlice} from '@reduxjs/toolkit';
 import {useColorScheme} from 'react-native';
 
 type ThemeState = {
@@ -19,7 +19,7 @@ export const themeSlice = createSlice({
   name: 'theme',
   initialState,
   reducers: {
-    setTheme: (state, action) => {
+    setTheme: (state, action: PayloadAction<string>) => {
       state.mode = action.payload;
     },
   },
